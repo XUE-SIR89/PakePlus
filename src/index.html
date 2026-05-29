@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>瑞泽销售助手 · 专业客户管理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+    <script src="https://api.map.baidu.com/api?v=3.0&ak=M5Jc5OiXavu61RpvSVt1NsC7aju1uI7a"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif; background: #f0f2f5; padding: 20px; }
+        .app-container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; }
+        
+        .header { background: linear-gradient(135deg, #0a4c6e 0%, #0b5a7a 100%); padding: 16px 28px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .header h1 { font-size: 1.35rem; display: flex; align-items: center; gap: 10px; }
+        .admin-btn { background: rgba(255,255,255,0.2); border: none; padding: 6px 18px; border-radius: 40px; cursor: pointer; font-size: 0.85rem; transition: 0.2s; }
+        .admin-btn:hover { background: rgba(255,255,255,0.3); }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 16px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid #eef2f8; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: #0b5a7a; }
+        .stat-label { font-size: 0.7rem; color: #7b8a9b; margin-top: 4px; }
+        
+        .dashboard { display: flex; gap: 20px; padding: 20px; }
+        .left-panel { flex: 2.5; min-width: 0; }
+        .right-panel { flex: 1.2; min-width: 280px; display: flex; flex-direction: column; gap: 16px; }
+        
+        .card { background: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #eef2f8; overflow: hidden; }
+        .card-header { padding: 12px 16px; background: #fafcfd; border-bottom: 1px solid #eef2f8; font-weight: 600; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+        .card-body { padding: 12px; }
+        
+        .funnel-container { height: 160px; }
+        .level-container { height: 140px; }
+        .trend-container { height: 180px; }
+        canvas { max-height: 100%; width: 100%; }
+        
+        .search-box { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .search-box input, .search-box select { flex: 1; padding: 6px 12px; border-radius: 30px; border: 1px solid #e2e8f0; font-size: 0.8rem; background: white; }
+        .client-item { padding: 12px; border-bottom: 1px solid #f0f2f5; cursor: pointer; transition: 0.1s; }
+        .client-item:hover { background: #f8fafd; }
+        .client-name { font-weight: 600; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; font-size: 0.85rem; }
+        .client-info { font-size: 0.75rem; color: #5a6874; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+        .client-products { font-size: 0.7rem; color: #0b5a7a; background: #eef2fa; padding: 4px 8px; border-radius: 12px; display: inline-block; margin-top: 4px; }
+        .product-tag { display: inline-block; background: #eef2fa; padding: 2px 6px; border-radius: 12px; margin-right: 6px; margin-top: 4px; font-size: 0.65rem; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 30px; font-size: 0.65rem; font-weight: 500; }
+        .status-待联系 { background: #f1f3f4; color: #5f6368; }
+        .status-已联系 { background: #e3f2fd; color: #1565c0; }
+        .status-已报价 { background: #fff3e0; color: #e65100; }
+        .status-已签约 { background: #e8f5e9; color: #2e7d32; }
+        .level-A { background: #ffebee; color: #c62828; }
+        .level-B { background: #fff8e1; color: #f9a825; }
+        .level-C { background: #e8f5e9; color: #43a047; }
+        .level-D { background: #eceff1; color: #546e7a; }
+        .type-badge { background: #e8eaf6; color: #3949ab; }
+        .overdue { background: #fff5f5 !important; border-left: 3px solid #e74c3c; }
+        .todo-item { padding: 8px 10px; border-bottom: 1px solid #f0f2f5; cursor: pointer; font-size: 0.75rem; }
+        .todo-item:hover { background: #f8fafd; }
+        
+        .map-section { padding: 0 20px 20px 20px; }
+        .map-card { border-radius: 20px; overflow: hidden; border: 1px solid #eef2f8; }
+        #baiduMap { height: 280px; width: 100%; }
+        
+        .modal { display: none; position: fixed; top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000; justify-content:center;align-items:center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 28px; width: 90%; max-width: 850px; max-height: 85vh; overflow-y: auto; padding: 0; }
+        .modal-header { padding: 14px 20px; border-bottom: 1px solid #eef2f8; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 16px 20px; }
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 130px; }
+        .form-group label { font-size: 0.65rem; color: #5a6874; margin-bottom: 4px; display: block; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px 10px; border-radius: 20px; border: 1px solid #e2e8f0; font-size: 0.8rem; }
+        .product-item { background: #f8fafd; padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #eef2f8; }
+        .product-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .product-row select, .product-row input { flex: 1; min-width: 100px; padding: 6px 8px; border-radius: 16px; border: 1px solid #e2e8f0; font-size: 0.75rem; }
+        .product-intent { margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .product-intent label { font-size: 0.7rem; color: #e65100; margin-right: 4px; }
+        .btn { background: #0b5a7a; color: white; border: none; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+        .btn-sm { padding: 3px 10px; font-size: 0.7rem; }
+        .btn-danger { background: #e74c3c; }
+        .btn-warning { background: #f39c12; }
+        .btn-outline { background: transparent; border: 1px solid #0b5a7a; color: #0b5a7a; }
+        .close-modal { font-size: 24px; cursor: pointer; color: #aaa; line-height: 1; }
+        footer { text-align: center; padding: 12px; font-size: 0.65rem; color: #8ba3b5; border-top: 1px solid #eef2f8; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        .data-table th, .data-table td { padding: 8px 6px; text-align: left; border-bottom: 1px solid #eef2f8; }
+        .data-table th { background: #f8fafd; }
+        
+        .pdf-preview-container { max-height: 500px; overflow-y: auto; background: #525659; padding: 10px; border-radius: 12px; }
+        .pdf-page { margin-bottom: 10px; text-align: center; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .pdf-page canvas { max-width: 100%; height: auto !important; border-radius: 8px; }
+        
+        .login-container { text-align: center; padding: 20px; }
+        .login-icon { font-size: 3rem; color: #0b5a7a; margin-bottom: 16px; }
+        .login-input { width: 100%; padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 40px; font-size: 0.9rem; margin-bottom: 16px; text-align: center; }
+        .login-input:focus { outline: none; border-color: #0b5a7a; box-shadow: 0 0 0 2px rgba(11,90,122,0.1); }
+        .login-btn { background: #0b5a7a; color: white; border: none; padding: 10px 24px; border-radius: 40px; cursor: pointer; width: 100%; font-size: 0.9rem; }
+        .login-error { color: #e74c3c; font-size: 0.75rem; margin-top: 12px; }
+        
+        .storage-info { background: #d1ecf1; padding: 8px 12px; border-radius: 12px; margin-bottom: 12px; font-size: 0.7rem; word-break: break-all; }
+        
+        @media (max-width: 1000px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .dashboard { flex-direction: column; }
+            .right-panel { flex-direction: row; flex-wrap: wrap; }
+            .right-panel .card { flex: 1; min-width: 240px; }
+        }
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .product-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header">
+        <h1><i class="fas fa-chart-line"></i> 瑞泽销售助手 · 专业客户管理系统</h1>
+        <button class="admin-btn" id="adminBtn" onclick="openAdminLogin()"><i class="fas fa-user-shield"></i> 管理员后台</button>
+    </div>
+
+    <div style="padding: 20px 20px 0 20px;">
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="totalClients">0</div><div class="stat-label">总客户数</div></div>
+            <div class="stat-card"><div class="stat-value" id="newMonthClients">0</div><div class="stat-label">本月新增</div></div>
+            <div class="stat-card"><div class="stat-value" id="totalFollows">0</div><div class="stat-label">本月跟进</div></div>
+            <div class="stat-card"><div class="stat-value" id="totalContractAmount">0</div><div class="stat-label">签约总额(万)</div></div>
+            <div class="stat-card"><div class="stat-value" id="conversionRate">0%</div><div class="stat-label">签约转化率</div></div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="left-panel">
+            <div class="card">
+                <div class="card-header"><span><i class="fas fa-users"></i> 客户列表</span><span id="clientCount">0</span></div>
+                <div class="card-body">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="公司/联系人/电话" oninput="renderClientList()">
+                        <select id="statusFilter" onchange="renderClientList()"><option value="">全部状态</option><option>待联系</option><option>已联系</option><option>已报价</option><option>已签约</option></select>
+                        <select id="levelFilter" onchange="renderClientList()"><option value="">全部等级</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+                        <select id="typeFilter" onchange="renderClientList()"><option value="">全部类型</option><option>工业气站</option><option>铸造厂</option><option>半导体</option><option>新材料</option><option>科研院所</option><option>其他</option></select>
+                        <select id="provinceFilter" onchange="renderClientList()"><option value="">全部省份</option></select>
+                    </div>
+                    <div id="clientListContainer" style="max-height: 740px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="card"><div class="card-header"><span><i class="fas fa-bell"></i> 待办提醒</span><span id="todoCount"></span></div><div class="card-body" style="padding:0;"><div id="todoList" style="max-height: 150px; overflow-y: auto;"></div></div></div>
+            <div class="card"><div class="card-header"><span><i class="fas fa-chart-simple"></i> 销售漏斗</span></div><div class="card-body"><div class="funnel-container"><canvas id="funnelChart"></canvas></div></div></div>
+            <div class="card"><div class="card-header"><span><i class="fas fa-chart-pie"></i> 客户等级</span></div><div class="card-body"><div class="level-container"><canvas id="levelChart"></canvas></div></div></div>
+            <div class="card"><div class="card-header"><span><i class="fas fa-chart-line"></i> 签约金额趋势</span></div><div class="card-body"><div class="trend-container"><canvas id="trendChart"></canvas></div></div></div>
+        </div>
+    </div>
+
+    <div class="map-section"><div class="map-card"><div class="card-header"><span><i class="fas fa-map-marked-alt"></i> 全国客户分布地图</span><span>点击省份查看客户</span></div><div id="baiduMap" style="height: 280px; width: 100%;"></div></div></div>
+    <footer>数据自动保存到本地文件 | 点击客户可查看详情、合同附件 | 管理员密码: Ruize</footer>
+</div>
+<!-- 客户详情模态框 -->
+<div id="clientModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><span id="modalTitle">客户详情</span><span class="close-modal" onclick="closeModal()">&times;</span></div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-body" style="border-top:1px solid #eef2f8;">
+            <div class="form-group"><label>添加跟进记录</label><textarea id="followContent" rows="2" placeholder="沟通内容..."></textarea></div>
+            <div class="form-row"><div class="form-group"><label>下次跟进日期</label><input type="date" id="nextFollowDate"></div></div>
+            <button onclick="addFollowRecord()" class="btn" style="width:100%;">保存跟进</button>
+        </div>
+    </div>
+</div>
+
+<!-- 管理员登录模态框 -->
+<div id="loginModal" class="modal">
+    <div class="modal-content" style="max-width: 380px;">
+        <div class="modal-header"><span>管理员登录</span><span class="close-modal" onclick="closeLoginModal()">&times;</span></div>
+        <div class="login-container">
+            <div class="login-icon"><i class="fas fa-shield-alt"></i></div>
+            <input type="password" id="adminPwd" class="login-input" placeholder="请输入密码" onkeypress="if(event.keyCode===13) checkAdminLogin()">
+            <button class="login-btn" onclick="checkAdminLogin()">登录</button>
+            <div id="loginErrorMsg" class="login-error"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 管理员后台 -->
+<div id="adminPanel" class="modal">
+    <div class="modal-content" style="max-width: 1100px;">
+        <div class="modal-header"><span><i class="fas fa-cog"></i> 管理员后台</span><span class="close-modal" onclick="closeAdminPanel()">&times;</span></div>
+        <div class="modal-body">
+            <div class="search-box">
+                <input type="text" id="adminSearch" placeholder="搜索公司/联系人/电话" oninput="renderAdminList()">
+                <select id="adminStatusFilter" onchange="renderAdminList()"><option value="">全部状态</option><option>待联系</option><option>已联系</option><option>已报价</option><option>已签约</option></select>
+                <button onclick="showAddClientForm()" class="btn btn-sm"><i class="fas fa-plus"></i> 新增</button>
+                <button onclick="exportData()" class="btn btn-sm"><i class="fas fa-download"></i> 导出</button>
+                <button onclick="importData()" class="btn btn-sm"><i class="fas fa-upload"></i> 导入</button>
+                <button onclick="resetToDefault()" class="btn btn-sm" style="background:#e67e22;"><i class="fas fa-undo"></i> 重置默认</button>
+            </div>
+            <div id="adminList" style="max-height: 400px; overflow-y: auto;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加/编辑客户表单 -->
+<div id="clientFormModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header"><span id="formTitle">添加客户</span><span class="close-modal" onclick="closeClientForm()">&times;</span></div>
+        <div class="modal-body">
+            <form id="clientForm">
+                <input type="hidden" id="editId">
+                <div class="form-row">
+                    <div class="form-group"><label>省份</label><select id="province" required></select></div>
+                    <div class="form-group"><label>客户类型</label><select id="customerType"><option>工业气站</option><option>铸造厂</option><option>半导体</option><option>新材料</option><option>科研院所</option><option>其他</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>公司名称</label><input id="company" required></div>
+                    <div class="form-group"><label>联系人</label><input id="contact"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>联系电话</label><input id="phone" type="tel"></div>
+                    <div class="form-group"><label>客户等级</label><select id="level"><option value="A">A级(重点)</option><option value="B">B级(潜在)</option><option value="C">C级(一般)</option><option value="D">D级(观望)</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>跟进状态</label><select id="status"><option>待联系</option><option>已联系</option><option>已报价</option><option>已签约</option></select></div>
+                    <div class="form-group"><label>最后跟进日期</label><input id="followDate" type="date"></div>
+                </div>
+<div class="form-group"><label>产品/设备明细</label></div>
+<div id="productsContainer"></div>
+<button type="button" onclick="addProductField()" class="btn btn-sm btn-outline" style="margin-bottom:12px;"><i class="fas fa-plus"></i> 添加产品（如无产品可不添加）</button>
+<div class="form-group" style="font-size:0.65rem; color:#999; margin-top:-8px;"><i class="fas fa-info-circle"></i> 客户暂无意向产品时，可不添加产品直接保存</div>
+                <div class="form-group"><label>备注</label><textarea id="remark" rows="2"></textarea></div>
+                <div class="form-group"><label>合同附件</label><input type="file" id="contractFile" accept=".pdf,.doc,.docx,.jpg,.png"><span id="contractFileName" style="margin-left:8px; color:#666;"></span></div>
+                <button type="submit" class="btn" style="width:100%;">保存客户</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 合同预览模态框 -->
+<div id="contractPreviewModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header"><span><i class="fas fa-file-contract"></i> 合同附件预览</span><span class="close-modal" onclick="closeContractPreview()">&times;</span></div>
+        <div class="modal-body" id="contractPreviewBody" style="text-align: center; min-height: 300px;">
+            <div id="pdfLoading" style="display:none; padding:40px;"><i class="fas fa-spinner fa-pulse"></i> 加载中...</div>
+            <div id="pdfViewer" class="pdf-preview-container"></div>
+            <div id="imageViewer" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+<script>
+    // 检测 Electron 环境
+    const isElectron = typeof window !== 'undefined' && window.process && window.process.type === 'renderer';
+    
+    // 全局变量
+    let clients = [];
+    let currentClient = null;
+    let funnelChart, levelChart, trendChart;
+    let map = null;
+    let markers = [];
+    let isAdminLoggedIn = false;
+    let productCounter = 0;
+    
+    // ================= 数据持久化（Electron 文件存储） =================
+    async function saveData() {
+        const toSave = clients;
+        if (isElectron) {
+            try {
+                const result = await window.electronAPI.saveData(toSave);
+                if (result.success) {
+                    console.log('数据已保存到:', result.path);
+                }
+            } catch(e) {
+                localStorage.setItem('ruize_sales_clients', JSON.stringify(toSave));
+            }
+        } else {
+            localStorage.setItem('ruize_sales_clients', JSON.stringify(toSave));
+        }
+    }
+    
+    async function loadData() {
+        if (isElectron) {
+            try {
+                const result = await window.electronAPI.loadData();
+                if (result.success && result.data) {
+                    clients = result.data;
+                    return true;
+                }
+            } catch(e) {}
+        }
+        const saved = localStorage.getItem('ruize_sales_clients');
+        if (saved && saved !== '[]') {
+            clients = JSON.parse(saved);
+            return true;
+        }
+        return false;
+    }
+    
+    async function getStoragePath() {
+        if (isElectron) {
+            try {
+                const path = await window.electronAPI.getStoragePath();
+                return path;
+            } catch(e) {}
+        }
+        return '浏览器本地存储 (LocalStorage)';
+    }
+    
+    async function exportData() {
+        if (isElectron) {
+            try {
+                const result = await window.electronAPI.exportData(clients);
+                if (result.success) {
+                    alert(`✅ 数据已导出到:\n${result.path}`);
+                } else if (!result.canceled) {
+                    alert('导出失败');
+                }
+            } catch(e) {
+                alert('导出失败: ' + e.message);
+            }
+        } else {
+            let dataStr = JSON.stringify(clients, null, 2);
+            let blob = new Blob([dataStr], {type:"application/json"});
+            let a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `瑞泽销售助手_备份_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+            a.click();
+            alert("导出成功");
+        }
+    }
+    
+    async function importData() {
+        if (isElectron) {
+            try {
+                const result = await window.electronAPI.importData();
+                if (result.success) {
+                    clients = result.data;
+                    clients.forEach(c => calcClientTotals(c));
+                    await saveData();
+                    refreshAll();
+                    if(isAdminLoggedIn) renderAdminList();
+                    alert(`✅ 导入成功！共 ${clients.length} 条客户记录`);
+                } else if (!result.canceled) {
+                    alert('导入失败');
+                }
+            } catch(e) {
+                alert('导入失败: ' + e.message);
+            }
+        } else {
+            let input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = e => {
+                let file = e.target.files[0];
+                let reader = new FileReader();
+                reader.onload = ev => {
+                    try {
+                        let imported = JSON.parse(ev.target.result);
+                        clients = imported;
+                        clients.forEach(c => calcClientTotals(c));
+                        saveData();
+                        refreshAll();
+                        if(isAdminLoggedIn) renderAdminList();
+                        alert("导入成功");
+                    } catch(err) { alert("文件格式错误"); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+    }
+    
+    // ================= 默认数据 =================
+    function getDefaultData() {
+        return [
+            { id:1, province:"山东省", customerType:"工业气站", company:"山东省临沂盈安气体有限公司", contact:"薛俊迎", phone:"13800138004", level:"A", status:"已签约", followDate:"2025-05-10", nextFollow:"", remark:"大客户，多台设备", contractFile:null, contractFileName:null, followRecords:[], createDate:"2025-04-15",
+              products: [{ productType:"氩气纯化", productModel:"RZ-YA-200C", qty:1, quoteAmount:7.5, isIntent: false }, 
+                         { productType:"氮气纯化", productModel:"RZ-DYC-200C", qty:1, quoteAmount:7.5, isIntent: false }] },
+            { id:2, province:"湖北省", customerType:"工业气站", company:"湖北省黄石弘安气体有限公司", contact:"张长江", phone:"13800138004", level:"A", status:"已签约", followDate:"2025-05-10", nextFollow:"", remark:"大客户，多台设备", contractFile:null, contractFileName:null, followRecords:[], createDate:"2025-04-15",
+              products: [{ productType:"氩气纯化", productModel:"RZ-YA-4C", qty:1, quoteAmount:7.5, isIntent: false }, 
+                         { productType:"氮气纯化", productModel:"RZ-DYC-50", qty:1, quoteAmount:7.5, isIntent: false }] },
+            { id:3, province:"安徽省", customerType:"工业气站", company:"安徽庐江县通达气体有限公司", contact:"王先林", phone:"13800138004", level:"A", status:"已签约", followDate:"2025-05-10", nextFollow:"", remark:"大客户，多台设备", contractFile:null, contractFileName:null, followRecords:[], createDate:"2025-04-15",
+              products: [{ productType:"氩气纯化", productModel:"RZ-YA-4C", qty:1, quoteAmount:7.5, isIntent: false }, 
+                         { productType:"氮气纯化", productModel:"RZ-DYC-50", qty:1, quoteAmount:7.5, isIntent: false },
+                         { productType:"二氧化碳纯化", productModel:"RZ-CO2-35D", qty:1, quoteAmount:10, isIntent: false }] },
+            { id:4, province:"贵州省", customerType:"新材料", company:"贵州希诚新材料有限公司", contact:"陶经理", phone:"19906125333", level:"B", status:"已联系", followDate:"2025-05-20", nextFollow:"", remark:"看过现场，进度未知，设备方案还无法确定", contractFile:null, contractFileName:null, followRecords:[], createDate:"2026-05-01",
+              products: [] },
+            { id:5, province:"广东省", customerType:"半导体", company:"深圳（A示例客户可修改）有限公司", contact:"王工", phone:"13800138002", level:"B", status:"待联系", followDate:"2025-05-18", nextFollow:"2025-05-28", remark:"等待审批", contractFile:null, contractFileName:null, followRecords:[], createDate:"2025-05-10",
+              products: [] },
+            { id:6, province:"江苏省", customerType:"铸造厂", company:"南京（B示例客户可修改）有限公司", contact:"张总", phone:"13800138003", level:"B", status:"已联系", followDate:"2025-05-15", nextFollow:"2025-05-22", remark:"继续跟进", contractFile:null, contractFileName:null, followRecords:[], createDate:"2025-05-05",
+              products: [{ productType:"氩气纯化", productModel:"RZ-YA-4D", qty:1, quoteAmount:2.8, isIntent: true }] },
+            { id:7, province:"福建省", customerType:"工业气站", company:"福建三明天龙气体有限公司", contact:"李总", phone:"13800138004", level:"A", status:"已报价", followDate:"2025-05-10", nextFollow:"", remark:"还在做安全评估", contractFile:null, contractFileName:null, followRecords:[], createDate:"2026-05-15",
+              products: [{ productType:"氩气纯化", productModel:"RZ-YA-200C", qty:1, quoteAmount:8.6, isIntent: true }, 
+                         { productType:"氮气纯化", productModel:"RZ-DYC-200C", qty:1, quoteAmount:8.6, isIntent:true}] },
+            { id:8, province:"湖北省", customerType:"工业气站", company:"宜昌秭归县恒安气体有限公司", contact:"宋总", phone:"13872488255", level:"A", status:"已报价", followDate:"2025-05-10", nextFollow:"", remark:"还在做安全评估", contractFile:null, contractFileName:null, followRecords:[], createDate:"2026-05-15",
+              products: [{ productType:"氩气纯化", productModel:"RZ-YA-50C", qty:1, quoteAmount:4.5, isIntent: true }] },
+            { id:9, province:"北京市", customerType:"科研院所", company:"北京（C示例客户可修改）大学", contact:"陈老师", phone:"13800138005", level:"C", status:"已报价", followDate:"2025-05-01", nextFollow:"2025-05-30", remark:"实验室需求", contractFile:null, contractFileName:null, followRecords:[], createDate:"2025-05-01",
+              products: [{ productType:"氩气纯化", productModel:"RZ-YA-4D", qty:1, quoteAmount:2.8, isIntent: true }] }
+        ];
+    }
+    
+    function calcClientTotals(client) {
+        let totalQty = 0, totalAmount = 0, intentCount = 0;
+        if (client.products && client.products.length) {
+            client.products.forEach(p => {
+                if (p.isIntent) { intentCount++; } else { totalQty += p.qty || 0; totalAmount += (p.quoteAmount || 0); }
+            });
+        }
+        client._totalQty = totalQty; client._totalAmount = totalAmount; client._intentCount = intentCount;
+        return { totalQty, totalAmount, intentCount };
+    }
+    
+    window.resetToDefault = async function() {
+        if(confirm("重置将删除所有当前数据，恢复为默认示例数据。\n\n确定要重置吗？")) {
+            clients = getDefaultData();
+            clients.forEach(c => calcClientTotals(c));
+            await saveData();
+            refreshAll();
+            if(isAdminLoggedIn) renderAdminList();
+            alert("已恢复默认数据");
+        }
+    }
+    // ================= CRUD 操作 =================
+    async function addClient(client) { 
+        client.id = Date.now(); 
+        client.followRecords = client.followRecords || []; 
+        client.createDate = new Date().toISOString().slice(0,10); 
+        if (!client.products) client.products = [];
+        calcClientTotals(client);
+        clients.push(client); 
+        await saveData(); 
+        refreshAll(); 
+        if(isAdminLoggedIn) renderAdminList();
+    }
+    
+    async function updateClient(id, updates) { 
+        let idx = clients.findIndex(c=>c.id==id); 
+        if(idx!==-1) { 
+            Object.assign(clients[idx], updates); 
+            calcClientTotals(clients[idx]);
+            await saveData(); 
+            refreshAll(); 
+            if(isAdminLoggedIn) renderAdminList();
+        } 
+    }
+    
+    async function deleteClient(id) { 
+        clients = clients.filter(c=>c.id!=id); 
+        await saveData(); 
+        refreshAll(); 
+        if(isAdminLoggedIn) renderAdminList();
+    }
+    
+    // ================= UI 渲染函数 =================
+    function updateDashboard() {
+        const total = clients.length;
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        const newMonth = clients.filter(c => c.createDate && c.createDate.startsWith(currentMonth)).length;
+        const monthFollows = clients.reduce((sum, c) => sum + (c.followRecords?.filter(r => r.date && r.date.startsWith(currentMonth)).length || 0), 0);
+        const totalAmount = clients.reduce((sum, c) => sum + (c._totalAmount || 0), 0);
+        const signedCount = clients.filter(c => c.status === '已签约').length;
+        const conversionRate = total === 0 ? 0 : Math.round(signedCount / total * 100);
+        document.getElementById('totalClients').innerText = total;
+        document.getElementById('newMonthClients').innerText = newMonth;
+        document.getElementById('totalFollows').innerText = monthFollows;
+        document.getElementById('totalContractAmount').innerText = totalAmount.toFixed(1);
+        document.getElementById('conversionRate').innerText = conversionRate + '%';
+        updateTrendChart();
+    }
+    
+    function updateTrendChart() {
+        const months = []; const monthAmount = {};
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(); d.setMonth(d.getMonth() - i);
+            const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            const monthLabel = `${d.getMonth()+1}月`;
+            months.push(monthLabel); monthAmount[monthKey] = 0;
+        }
+        clients.forEach(c => {
+            if (c.status === '已签约' && c._totalAmount && c.followDate) {
+                const monthKey = c.followDate.substring(0,7);
+                if (monthAmount[monthKey] !== undefined) monthAmount[monthKey] += c._totalAmount;
+            }
+        });
+        const data = months.map((_, i) => { const d = new Date(); d.setMonth(d.getMonth() - (5 - i)); const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; return monthAmount[monthKey] || 0; });
+        if (trendChart) trendChart.destroy();
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        trendChart = new Chart(ctx, { type: 'line', data: { labels: months, datasets: [{ label: '签约金额(万元)', data: data, borderColor: '#0b5a7a', backgroundColor: 'rgba(11,90,122,0.1)', fill: true, tension: 0.3, pointBackgroundColor: '#0b5a7a', pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } } } } });
+    }
+    
+    function updateStatsAndCharts() {
+        const statusCount = { '待联系':0, '已联系':0, '已报价':0, '已签约':0 };
+        const levelCount = { 'A':0, 'B':0, 'C':0, 'D':0 };
+        clients.forEach(c=>{ statusCount[c.status]++; levelCount[c.level]++; });
+        if(funnelChart) funnelChart.destroy();
+        funnelChart = new Chart(document.getElementById('funnelChart'), { type: 'bar', data: { labels: Object.keys(statusCount), datasets: [{ label: '客户数', data: Object.values(statusCount), backgroundColor: '#0b5a7a', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } } } } });
+        if(levelChart) levelChart.destroy();
+        levelChart = new Chart(document.getElementById('levelChart'), { type: 'doughnut', data: { labels: ['A级', 'B级', 'C级', 'D级'], datasets: [{ data: [levelCount.A, levelCount.B, levelCount.C, levelCount.D], backgroundColor: ['#c62828', '#f9a825', '#43a047', '#616161'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } } });
+    }
+    
+    function addFollowRecord() {
+        if(!currentClient) return;
+        const content = document.getElementById('followContent').value.trim();
+        const nextDate = document.getElementById('nextFollowDate').value;
+        if(!content && !nextDate) { alert("请填写跟进内容或下次跟进日期"); return; }
+        const record = { date: new Date().toISOString().slice(0,10), content, nextFollow: nextDate };
+        currentClient.followRecords = currentClient.followRecords || [];
+        currentClient.followRecords.unshift(record);
+        if(nextDate) currentClient.nextFollow = nextDate;
+        currentClient.followDate = new Date().toISOString().slice(0,10);
+        updateClient(currentClient.id, { followRecords: currentClient.followRecords, nextFollow: currentClient.nextFollow, followDate: currentClient.followDate });
+        document.getElementById('followContent').value = ''; document.getElementById('nextFollowDate').value = '';
+        renderModal(currentClient); refreshAll(); alert("跟进记录已保存");
+    }
+    
+    function refreshAll() { 
+        renderClientList(); 
+        renderTodoList(); 
+        updateStatsAndCharts(); 
+        populateFilters(); 
+        refreshMapMarkers(); 
+        updateDashboard(); 
+    }
+    
+    function renderClientList() {
+        let filtered = [...clients];
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+        const level = document.getElementById('levelFilter').value;
+        const type = document.getElementById('typeFilter').value;
+        const province = document.getElementById('provinceFilter').value;
+        if(search) filtered = filtered.filter(c=> c.company.toLowerCase().includes(search) || (c.contact && c.contact.toLowerCase().includes(search)) || (c.phone && c.phone.includes(search)));
+        if(status) filtered = filtered.filter(c=>c.status===status);
+        if(level) filtered = filtered.filter(c=>c.level===level);
+        if(type) filtered = filtered.filter(c=>c.customerType===type);
+        if(province) filtered = filtered.filter(c=>c.province===province);
+        document.getElementById('clientCount').innerText = `${filtered.length} 位`;
+        const container = document.getElementById('clientListContainer');
+        if(filtered.length===0){ container.innerHTML='<div style="padding:20px;text-align:center;color:#999;">暂无客户</div>'; return; }
+        let html = '';
+        const today = new Date().toISOString().slice(0,10);
+        filtered.forEach(c=>{
+            const isOverdue = c.nextFollow && c.nextFollow < today && c.status !== '已签约';
+            let productsHtml = '';
+            if (c.products && c.products.length) {
+                c.products.forEach(p => { const intentTag = p.isIntent ? '🎯意向' : ''; const qtyShow = p.isIntent ? '' : `×${p.qty}`; productsHtml += `<span class="product-tag">${p.productType} ${p.productModel||''} ${qtyShow} ${intentTag}</span>`; });
+            }
+            html += `<div class="client-item ${isOverdue ? 'overdue' : ''}" onclick="openClientModal(${c.id})">
+                        <div class="client-name"><span><i class="fas fa-building"></i> ${escapeHtml(c.company)}</span><span><span class="badge level-${c.level}">${c.level}</span><span class="badge type-badge">${c.customerType||'其他'}</span></span></div>
+                        <div class="client-info"><span><i class="fas fa-user"></i> ${escapeHtml(c.contact||'')}</span><span><i class="fas fa-phone"></i> ${escapeHtml(c.phone||'')}</span><span class="badge status-${c.status}">${c.status}</span>${c._totalAmount ? `<span><i class="fas fa-yen-sign"></i> ${c._totalAmount.toFixed(1)}万</span>` : ''}${c.nextFollow ? `<span><i class="far fa-calendar-alt"></i> ${c.nextFollow}</span>` : ''}</div>
+                        <div class="client-products">${productsHtml || '<span style="color:#999;">暂无产品</span>'}</div>
+                      </div>`;
+        });
+        container.innerHTML = html;
+    }
+    
+    function renderTodoList() {
+        const today = new Date().toISOString().slice(0,10);
+        const overdue = clients.filter(c=>c.nextFollow && c.nextFollow < today && c.status !== '已签约');
+        const todayTodos = clients.filter(c=>c.nextFollow === today);
+        const container = document.getElementById('todoList');
+        let html = '';
+        if(overdue.length) html += `<div style="color:#e74c3c; padding:8px 10px;"><i class="fas fa-exclamation-triangle"></i> 逾期未跟进 (${overdue.length})</div>`;
+        overdue.slice(0,3).forEach(c=>{ html += `<div class="todo-item" onclick="openClientModal(${c.id})">📞 ${escapeHtml(c.company)} · ${c.nextFollow}</div>`; });
+        if(todayTodos.length) html += `<div style="padding:8px 10px;"><i class="fas fa-bell"></i> 今日待跟进 (${todayTodos.length})</div>`;
+        todayTodos.slice(0,3).forEach(c=>{ html += `<div class="todo-item" onclick="openClientModal(${c.id})">📞 ${escapeHtml(c.company)}</div>`; });
+        if(!overdue.length && !todayTodos.length) html = '<div style="padding:12px; text-align:center; color:#999;">暂无待办事项</div>';
+        document.getElementById('todoCount').innerHTML = overdue.length + todayTodos.length ? `(${overdue.length+todayTodos.length})` : '';
+        container.innerHTML = html;
+    }
+    
+    function populateFilters() {
+        const provinces = [...new Set(clients.map(c=>c.province))];
+        document.getElementById('provinceFilter').innerHTML = '<option value="">全部省份</option>' + provinces.map(p=>`<option>${p}</option>`).join('');
+    }
+    
+    function addProductField(existing = null) {
+        const container = document.getElementById('productsContainer');
+        const idx = productCounter++;
+        const div = document.createElement('div'); div.className = 'product-item'; div.id = `product_${idx}`;
+        const isIntentChecked = existing && existing.isIntent ? 'checked' : '';
+        const qtyValue = (existing && existing.qty) || 1; const amountValue = (existing && existing.quoteAmount) || '';
+        div.innerHTML = `
+            <div class="product-row">
+                <select id="prodType_${idx}" style="width:120px;"><option>氩气纯化</option><option>氮气纯化</option><option>氢气纯化</option><option>氧气纯化</option><option>混合配气</option><option>气体回收提纯</option><option>其他</option></select>
+                <input type="text" id="prodModel_${idx}" placeholder="型号" style="width:140px;" value="${escapeHtml(existing?.productModel || '')}">
+                <input type="number" id="prodQty_${idx}" placeholder="数量" style="width:80px;" value="${qtyValue}">
+                <input type="number" id="prodAmount_${idx}" placeholder="金额(万)" step="0.01" style="width:100px;" value="${amountValue}">
+                <button type="button" onclick="this.closest('.product-item').remove()" class="btn-sm" style="background:#e74c3c;"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="product-intent"><label><input type="checkbox" id="prodIntent_${idx}" ${isIntentChecked}> 🎯 意向产品（未成交，仅作需求记录）</label></div>
+        `;
+        if (existing) { const typeSelect = div.querySelector(`#prodType_${idx}`); if (typeSelect) typeSelect.value = existing.productType || '氩气纯化'; }
+        container.appendChild(div);
+    }
+    
+function getProductsFromForm() {
+    const products = [];
+    document.querySelectorAll('#productsContainer .product-item').forEach(div => {
+        const idxAttr = div.id.split('_')[1];
+        const productType = div.querySelector(`#prodType_${idxAttr}`)?.value || '';
+        const productModel = div.querySelector(`#prodModel_${idxAttr}`)?.value || '';
+        let qty = parseInt(div.querySelector(`#prodQty_${idxAttr}`)?.value) || 0;
+        let quoteAmount = parseFloat(div.querySelector(`#prodAmount_${idxAttr}`)?.value) || null;
+        const isIntent = div.querySelector(`#prodIntent_${idxAttr}`)?.checked || false;
+        
+        if (isIntent) { 
+            qty = 0; 
+            quoteAmount = null; 
+        }
+        
+        // 只要有产品类型就添加记录，不再要求数量大于0
+        if (productType) {
+            products.push({ 
+                productType, 
+                productModel, 
+                qty, 
+                quoteAmount, 
+                isIntent 
+            });
+        }
+    });
+    return products;
+}
+    
+    function openClientModal(id) { 
+        currentClient = clients.find(c=>c.id==id); 
+        if(!currentClient) return; 
+        renderModal(currentClient); 
+        document.getElementById('clientModal').classList.add('active'); 
+    }
+    
+    function renderModal(c) {
+        let timelineHtml = '';
+        (c.followRecords || []).forEach(r=>{ timelineHtml += `<div class="timeline-item"><b>${r.date}</b><br>${escapeHtml(r.content)}${r.nextFollow ? `<br>📅 下次: ${r.nextFollow}` : ''}</div>`; });
+        let productsHtml = '<table style="width:100%; font-size:0.7rem;"><thead><tr><th>产品类型</th><th>型号</th><th>数量</th><th>金额(万)</th><th>意向</th></tr></thead><tbody>';
+        (c.products || []).forEach(p => { productsHtml += `<tr><td>${escapeHtml(p.productType)}</td><td>${escapeHtml(p.productModel||'')}</td><td>${p.isIntent ? '-' : p.qty}</td><td>${p.isIntent ? '-' : (p.quoteAmount || '-')}</td><td>${p.isIntent ? '🎯 意向' : '-'}</td></tr>`; });
+        productsHtml += `</tbody>`;
+        let contractHtml = '<div style="color:#999;">暂无合同附件</div>';
+        if (c.contractFile) {
+            const fileExt = c.contractFileName ? c.contractFileName.split('.').pop().toLowerCase() : '';
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(fileExt);
+            if (isImage) {
+                contractHtml = `<div><img src="${c.contractFile}" style="max-width:100%; max-height:200px; border-radius:12px; cursor:pointer;" onclick="previewContract('${c.contractFile}', '${c.contractFileName}', '${fileExt}')"><br><span>${c.contractFileName || '合同附件'}</span></div>`;
+            } else {
+                contractHtml = `<div><i class="fas fa-file-pdf"></i> ${c.contractFileName || '合同附件'} <button onclick="previewContract('${c.contractFile}', '${c.contractFileName}', '${fileExt}')" class="btn-sm" style="margin-left:8px;">预览</button> <a href="${c.contractFile}" download="${c.contractFileName}" class="btn-sm" style="margin-left:4px;">下载</a></div>`;
+            }
+        }
+        const html = `<div><strong>${escapeHtml(c.company)}</strong> · ${c.province}<br>客户类型: ${c.customerType||'未分类'} | 等级: <span class="badge level-${c.level}">${c.level}</span><br>联系人: ${escapeHtml(c.contact||'')} | 电话: ${escapeHtml(c.phone||'')}<br>状态: <span class="badge status-${c.status}">${c.status}</span><br>最后跟进: ${c.followDate||'-'} | 下次跟进: ${c.nextFollow||'-'}<br>备注: ${escapeHtml(c.remark||'')}</div>
+        <div style="margin-top:10px;"><strong>产品/设备明细</strong></div>${productsHtml}
+        <div style="margin-top:10px;"><strong>合同附件</strong></div>${contractHtml}
+        <div style="margin-top:10px;"><strong>跟进记录</strong></div>
+        <div class="timeline" style="max-height:200px; overflow-y:auto;">${timelineHtml || '<div>暂无跟进记录</div>'}</div>`;
+        document.getElementById('modalBody').innerHTML = html;
+        document.getElementById('followContent').value = ''; document.getElementById('nextFollowDate').value = c.nextFollow || '';
+        document.getElementById('modalTitle').innerHTML = `客户详情 - ${c.company}`;
+    }
+    
+    window.previewContract = async function(fileData, fileName, fileExt) {
+        const modal = document.getElementById('contractPreviewModal');
+        const pdfViewer = document.getElementById('pdfViewer');
+        const imageViewer = document.getElementById('imageViewer');
+        const loading = document.getElementById('pdfLoading');
+        pdfViewer.innerHTML = ''; imageViewer.innerHTML = ''; imageViewer.style.display = 'none'; pdfViewer.style.display = 'none';
+        loading.style.display = 'block';
+        modal.classList.add('active');
+        if (fileExt === 'pdf') {
+            pdfViewer.style.display = 'block';
+            try {
+                const base64Data = fileData.split(',')[1];
+                const binaryString = atob(base64Data);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
+                const loadingTask = pdfjsLib.getDocument({ data: bytes });
+                const pdf = await loadingTask.promise;
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    canvas.style.width = '100%'; canvas.style.height = 'auto';
+                    const renderContext = { canvasContext: context, viewport: viewport, transform: [1,0,0,1,0,0] };
+                    await page.render(renderContext).promise;
+                    const pageDiv = document.createElement('div'); pageDiv.className = 'pdf-page';
+                    pageDiv.appendChild(canvas);
+                    pdfViewer.appendChild(pageDiv);
+                }
+            } catch(e) { pdfViewer.innerHTML = `<div style="padding:40px;text-align:center;color:#e74c3c;">PDF加载失败: ${e.message}</div>`; }
+        } else if (['jpg','jpeg','png','gif','bmp'].includes(fileExt)) {
+            imageViewer.style.display = 'block';
+            imageViewer.innerHTML = `<img src="${fileData}" style="max-width:100%; max-height:500px; border-radius:12px;">`;
+        } else {
+            imageViewer.style.display = 'block';
+            imageViewer.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-file-alt" style="font-size:3rem;"></i><p>不支持预览此文件类型</p><a href="${fileData}" download="${fileName}" class="btn">下载文件</a></div>`;
+        }
+        loading.style.display = 'none';
+    };
+    
+    function closeContractPreview() { document.getElementById('contractPreviewModal').classList.remove('active'); document.getElementById('pdfViewer').innerHTML = ''; document.getElementById('imageViewer').innerHTML = ''; }
+    function closeModal() { document.getElementById('clientModal').classList.remove('active'); currentClient = null; }
+    // ================= 百度地图 =================
+    function initMap() { 
+        map = new BMap.Map("baiduMap"); 
+        map.centerAndZoom(new BMap.Point(105.0, 35.0), 5); 
+        map.enableScrollWheelZoom(true); 
+        refreshMapMarkers(); 
+    }
+    
+    function refreshMapMarkers() {
+        if(!map) return;
+        markers.forEach(m=>map.removeOverlay(m)); markers = [];
+        const points = { "北京市":[116.4074,39.9042], "天津市":[117.1902,39.1256], "上海市":[121.4737,31.2304], "重庆市":[106.5044,29.5582], "河北省":[114.4995,38.1006], "山西省":[112.5624,37.8735], "辽宁省":[123.4315,41.8057], "吉林省":[125.3245,43.8868], "黑龙江省":[126.6424,45.7567], "江苏省":[118.7674,32.0415], "浙江省":[120.1536,30.2875], "安徽省":[117.2830,31.8612], "福建省":[119.3062,26.0753], "江西省":[115.8922,28.6765], "山东省":[117.0009,36.6758], "河南省":[113.6654,34.7570], "湖北省":[114.2986,30.5844], "湖南省":[112.9823,28.1941], "广东省":[113.2644,23.1291], "广西":[108.3200,22.8240], "海南省":[110.3312,20.0320], "四川省":[104.0657,30.6595], "贵州省":[106.7135,26.5783], "云南省":[102.7123,25.0406], "西藏":[91.1409,29.6565], "陕西省":[108.9480,34.2632], "甘肃省":[103.8236,36.0580], "青海省":[101.7800,36.6200], "宁夏":[106.2782,38.4664], "新疆":[87.6168,43.8266], "内蒙古":[111.6708,40.8183] };
+        let provinceCount = {}; clients.forEach(c=>{ provinceCount[c.province] = (provinceCount[c.province]||0)+1; });
+        for(let prov in provinceCount) {
+            let coords = points[prov];
+            if(coords) {
+                let point = new BMap.Point(coords[0], coords[1]);
+                let marker = new BMap.Marker(point);
+                let info = new BMap.InfoWindow(`<div><strong>${prov}</strong><br>客户数: ${provinceCount[prov]}<br><span onclick="window.selectProvinceFilter('${prov}')" style="color:#0b5a7a;cursor:pointer;">查看客户</span></div>`, {width:160});
+                marker.addEventListener("click", ()=>map.openInfoWindow(info, point));
+                map.addOverlay(marker); markers.push(marker);
+                let circle = new BMap.Circle(point, 35000, {fillColor:"#e67e22", fillOpacity:0.25}); map.addOverlay(circle);
+            }
+        }
+    }
+    
+    window.selectProvinceFilter = function(prov) { 
+        document.getElementById('provinceFilter').value = prov; 
+        renderClientList(); 
+        const points = { "广东省":[113.2644,23.1291], "江苏省":[118.7674,32.0415], "湖南省":[112.9823,28.1941], "北京市":[116.4074,39.9042] }; 
+        if(points[prov] && map) map.centerAndZoom(new BMap.Point(points[prov][0], points[prov][1]), 7); 
+    };
+    
+    // ================= 管理员后台功能 =================
+    function openAdminLogin() { 
+        document.getElementById('loginModal').classList.add('active'); 
+        document.getElementById('adminPwd').value = ''; 
+        document.getElementById('loginErrorMsg').innerHTML = ''; 
+    }
+    function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+    function checkAdminLogin() { 
+        let pwd = document.getElementById('adminPwd').value; 
+        if(pwd === "xmc") { 
+            isAdminLoggedIn = true; 
+            closeLoginModal(); 
+            openAdminPanel(); 
+        } else { 
+            document.getElementById('loginErrorMsg').innerHTML = "密码错误，请重试"; 
+        } 
+    }
+    function openAdminPanel() { 
+        document.getElementById('adminPanel').classList.add('active'); 
+        renderAdminList(); 
+    }
+    function closeAdminPanel() { 
+        document.getElementById('adminPanel').classList.remove('active'); 
+        isAdminLoggedIn = false; 
+    }
+    
+    function renderAdminList() {
+        let keyword = document.getElementById('adminSearch').value.toLowerCase();
+        let statusFilter = document.getElementById('adminStatusFilter').value;
+        let filtered = clients.filter(c=> (!keyword || c.company.toLowerCase().includes(keyword) || (c.contact && c.contact.toLowerCase().includes(keyword)) || (c.phone && c.phone.includes(keyword))) && (!statusFilter || c.status===statusFilter) );
+        if(filtered.length === 0) { document.getElementById('adminList').innerHTML = '<div style="padding:20px; text-align:center;">暂无客户数据</div>'; return; }
+        let html = `<table class="data-table"><thead><tr><th>省份</th><th>公司</th><th>类型</th><th>联系人</th><th>总金额(万)</th><th>状态</th><th>等级</th><th>操作</th></tr></thead><tbody>`;
+        filtered.forEach(c => {
+            html += `<tr>
+                        <td>${escapeHtml(c.province)}</td><td>${escapeHtml(c.company)}</td><td>${c.customerType || '-'}</td><td>${escapeHtml(c.contact || '')}</td><td>${c._totalAmount?.toFixed(1) || '-'}</td>
+                        <td><select onchange="updateClientField(${c.id}, 'status', this.value)">${['待联系','已联系','已报价','已签约'].map(s=>`<option ${c.status===s?'selected':''}>${s}</option>`).join('')}</select></td>
+                        <td><select onchange="updateClientField(${c.id}, 'level', this.value)">${['A','B','C','D'].map(l=>`<option ${c.level===l?'selected':''}>${l}</option>`).join('')}</select></td>
+                        <td><button onclick="editClient(${c.id})" class="btn-sm" style="background:#f39c12;"><i class="fas fa-edit"></i></button> <button onclick="deleteClientConfirm(${c.id})" class="btn-sm" style="background:#e74c3c;"><i class="fas fa-trash"></i></button></td>
+                      </tr>`;
+        });
+        html += `</tbody>`;
+        document.getElementById('adminList').innerHTML = html;
+    }
+    
+    window.updateClientField = function(id, field, value) { updateClient(id, { [field]: value }); };
+    
+    function editClient(id) {
+        let client = clients.find(c => c.id == id);
+        if(client) {
+            document.getElementById('editId').value = client.id;
+            document.getElementById('province').value = client.province;
+            document.getElementById('customerType').value = client.customerType || '其他';
+            document.getElementById('company').value = client.company;
+            document.getElementById('contact').value = client.contact || '';
+            document.getElementById('phone').value = client.phone || '';
+            document.getElementById('level').value = client.level;
+            document.getElementById('status').value = client.status;
+            document.getElementById('followDate').value = client.followDate || '';
+            document.getElementById('remark').value = client.remark || '';
+            document.getElementById('contractFileName').innerText = client.contractFileName || '';
+            document.getElementById('contractFile').value = '';
+            document.getElementById('productsContainer').innerHTML = ''; productCounter = 0;
+            if (client.products && client.products.length) { client.products.forEach(p => addProductField(p)); } else { addProductField(); }
+            document.getElementById('formTitle').innerText = '编辑客户';
+            document.getElementById('clientFormModal').classList.add('active');
+        }
+    }
+    
+    function showAddClientForm() {
+        document.getElementById('editId').value = ''; document.getElementById('province').value = '广东省'; document.getElementById('customerType').value = '工业气站';
+        document.getElementById('company').value = ''; document.getElementById('contact').value = ''; document.getElementById('phone').value = '';
+        document.getElementById('level').value = 'C'; document.getElementById('status').value = '待联系'; document.getElementById('followDate').value = '';
+        document.getElementById('remark').value = ''; document.getElementById('contractFileName').innerText = ''; document.getElementById('contractFile').value = '';
+        document.getElementById('productsContainer').innerHTML = ''; productCounter = 0; addProductField();
+        document.getElementById('formTitle').innerText = '添加客户';
+        document.getElementById('clientFormModal').classList.add('active');
+    }
+    
+    function closeClientForm() { document.getElementById('clientFormModal').classList.remove('active'); }
+    
+    document.getElementById('clientForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let id = document.getElementById('editId').value;
+        let products = getProductsFromForm();
+        let contractFileInput = document.getElementById('contractFile');
+        let clientData = {
+            province: document.getElementById('province').value, customerType: document.getElementById('customerType').value,
+            company: document.getElementById('company').value, contact: document.getElementById('contact').value,
+            phone: document.getElementById('phone').value, level: document.getElementById('level').value,
+            status: document.getElementById('status').value, followDate: document.getElementById('followDate').value,
+            remark: document.getElementById('remark').value, products: products, contractFile: null, contractFileName: null, followRecords: []
+        };
+        let processSave = (fileData, fileName) => {
+            clientData.contractFile = fileData; clientData.contractFileName = fileName;
+            if(id) { updateClient(parseInt(id), clientData); } else { addClient(clientData); }
+            closeClientForm(); alert("保存成功");
+        };
+        if(contractFileInput.files && contractFileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(ev) { processSave(ev.target.result, contractFileInput.files[0].name); };
+            reader.readAsDataURL(contractFileInput.files[0]);
+        } else { processSave(null, null); }
+    });
+    
+    function deleteClientConfirm(id) { if(confirm('确定删除该客户吗？')) deleteClient(id); }
+    
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+    
+    // ================= 初始化 =================
+    const provinces = ["北京市","天津市","上海市","重庆市","河北省","山西省","辽宁省","吉林省","黑龙江省","江苏省","浙江省","安徽省","福建省","江西省","山东省","河南省","湖北省","湖南省","广东省","广西","海南省","四川省","贵州省","云南省","西藏","陕西省","甘肃省","青海省","宁夏","新疆","内蒙古"];
+    const provSelect = document.getElementById('province');
+    if(provSelect) provSelect.innerHTML = provinces.map(p=>`<option value="${p}">${p}</option>`).join('');
+    
+    async function init() {
+        const hasData = await loadData();
+        if (!hasData || clients.length === 0) {
+            clients = getDefaultData();
+            clients.forEach(c => calcClientTotals(c));
+            await saveData();
+        } else {
+            clients.forEach(c => { if (!c.products) c.products = []; calcClientTotals(c); });
+        }
+        refreshAll();
+        initMap();
+        if (isElectron) {
+            const path = await getStoragePath();
+            console.log('数据存储位置:', path);
+        }
+    }
+    
+    init();
+</script>
+</body>
+</html>
