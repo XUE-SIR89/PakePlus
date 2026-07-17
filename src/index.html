@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>瑞泽气体净化员工培训系统</title>
     <style>
-        /* ========== 全样式（无对错颜色提示）========== */
+        /* ========== 全样式 ========== */
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         body { font-family:-apple-system,BlinkMacFont,'PingFang SC','Microsoft YaHei',sans-serif; line-height:1.6; color:#333; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; padding:10px; visibility:hidden; }
         .container { max-width:1100px; margin:0 auto; background:white; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.2); overflow:hidden; }
@@ -198,7 +198,6 @@
         .landscape-hint .hint-close { margin-top:30px; font-size:12px; opacity:0.5; cursor:pointer; }
         
         /* ========== 响应式布局 ========== */
-        /* 横屏全面展示模式 */
         @media (orientation: landscape) and (max-height: 600px) {
             .landscape-hint { display:none !important; }
             .container { max-width:100%; border-radius:0; }
@@ -239,7 +238,6 @@
             .splash-logo-text { font-size:20px; }
         }
         
-        /* 手机竖屏 */
         @media (max-width: 768px) {
             body { padding:5px; }
             .container { border-radius:10px; }
@@ -312,7 +310,6 @@
             .splash-text { font-size:14px; }
         }
         
-        /* 大屏适配 */
         @media (min-width: 1200px) {
             .container { max-width:1100px; }
             .features { gap:30px; }
@@ -327,7 +324,6 @@
             .stat-number { font-size:28px; }
         }
         
-        /* 安全区域适配（刘海屏） */
         @supports (padding: max(0px)) {
             body { padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
             .gesture-hint { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
@@ -457,12 +453,12 @@
     <div class="modal" id="admin-login-modal">
         <div class="modal-content" style="max-width:400px;">
             <div class="modal-header"><div class="modal-title">🔐 管理员登录</div><button class="close-btn" onclick="hideModal('admin-login-modal')">×</button></div>
-            <div class="form-group"><label for="admin-password">密码</label><input type="password" id="admin-password" class="form-control" value="xmc"></div>
+            <div class="form-group"><label for="admin-password">密码</label><input type="password" id="admin-password" class="form-control" value="999"></div>
             <div style="margin-top:15px; display:flex; gap:10px;">
                 <button class="btn btn-primary" onclick="adminLogin()" style="flex:1;">登录</button>
                 <button class="btn btn-secondary" onclick="hideModal('admin-login-modal')" style="flex:1;">取消</button>
             </div>
-            <div style="margin-top:15px; font-size:12px; color:#666; text-align:center;">初始密码 xmc</div>
+            <div style="margin-top:15px; font-size:12px; color:#666; text-align:center;">初始密码 999</div>
         </div>
     </div>
     
@@ -549,29 +545,40 @@
                 </div>
             </div>
             
-            <!-- 导入导出 -->
-            <div id="import-export" class="tab-content">
-                <div class="import-export-section">
-                    <h3>📤 导出题库</h3>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-                        <button class="btn btn-primary" onclick="exportQuestionBank()">📤 导出完整题库（含版本）</button>
-                        <button class="btn btn-success" onclick="generateOriginalJSON()">📦 生成原始题库JSON</button>
-                    </div>
-                    <div style="font-size:12px; color:#666; margin-bottom:10px;">
-                        💡 "原始题库JSON"为纯题目数组格式，可直接用于导入或保存为.json文件
-                    </div>
-                    <div id="export-code" class="code-block" style="display:none;"></div>
-                </div>
-                <div class="import-export-section" style="margin-top:20px;">
-                    <h3>📥 导入题库</h3>
-                    <textarea id="import-data" class="form-control" rows="6" placeholder="粘贴JSON格式的题库数据..."></textarea>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-                        <button class="btn btn-success" onclick="importQuestionBank()">📥 导入</button>
-                        <button class="btn btn-secondary" onclick="loadSampleData()">📄 加载示例</button>
-                        <button class="btn btn-secondary" onclick="document.getElementById('import-data').value=''">🗑️ 清空</button>
-                    </div>
-                </div>
-            </div>
+           <!-- 导入导出 -->
+<div id="import-export" class="tab-content">
+    <div class="import-export-section">
+        <h3>📤 导出题库</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+            <button class="btn btn-primary" onclick="exportQuestionBank()">📤 导出完整题库（含版本）</button>
+            <button class="btn btn-success" onclick="generateOriginalJSON()">📦 生成原始题库JSON</button>
+            <button class="btn btn-primary" onclick="downloadJSON()" style="background:#9b59b6;">💾 下载JSON文件</button>
+        </div>
+        <div style="font-size:12px; color:#666; margin-bottom:10px;">
+            💡 "原始题库JSON"为纯题目数组格式，"下载JSON文件"可直接保存为.json备份文件
+        </div>
+        <div id="export-code" class="code-block" style="display:none;"></div>
+    </div>
+    <div class="import-export-section" style="margin-top:20px;">
+        <h3>📥 导入题库</h3>
+        <!-- 新增：文件上传区域 -->
+        <div style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <label for="file-input" style="background:#3498db; color:white; padding:10px 20px; border-radius:6px; cursor:pointer; font-size:14px; transition:all 0.3s; display:inline-block;">
+                📂 选择JSON文件
+            </label>
+            <input type="file" id="file-input" accept=".json" style="display:none;" onchange="loadFileToImport()">
+            <span id="file-name" style="font-size:13px; color:#666; flex:1;">未选择文件</span>
+            <button class="btn btn-secondary" onclick="document.getElementById('file-input').value='';document.getElementById('file-name').textContent='未选择文件';document.getElementById('import-data').value='';">🗑️ 清除</button>
+        </div>
+        <div style="font-size:12px; color:#888; margin-bottom:8px;">或直接粘贴JSON到下方文本框：</div>
+        <textarea id="import-data" class="form-control" rows="6" placeholder="粘贴JSON格式的题库数据..."></textarea>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <button class="btn btn-success" onclick="importQuestionBank()">📥 导入</button>
+            <button class="btn btn-secondary" onclick="loadSampleData()">📄 加载示例</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('import-data').value='';showToast('已清空')">🗑️ 清空</button>
+        </div>
+    </div>
+</div>
         </div>
     </div>
     
@@ -608,76 +615,18 @@
         let startTime = null;
         let wrongQuestions = [];
         let isAdmin = false;
-        let adminPassword = 'xmc';
+        let adminPassword = '999';
         
         // ========== 初始精简题库（8题示例，方便后期扩充）==========
         const defaultQuestions = [
-           
-    {"id":1,"type":"single","question":"瑞泽气体净化湖北有限公司成立于哪一年？","options":["2015年","2016年","2017年","2018年"],"answer":2,"explanation":"✅ 正确答案：2017年\n公司成立于2017年，母公司苏州瑞泽有更久行业积淀。","category":"公司概况"},
-    {"id":2,"type":"multi","question":"公司的主要资质包括哪些？（多选）","options":["高新技术企业","科技型中小企业","企业联合创新企业","ISO 9001认证企业"],"answer":[0,1,2],"explanation":"✅ 正确答案：高新技术企业、科技型中小企业、企业联合创新企业\n公司是国家认定的高新技术企业、科技型中小企业、企业联合创新企业。","category":"公司概况"},
-    {"id":3,"type":"judge","question":"公司是苏州瑞泽在湖北设立的全资子公司。","answer":true,"explanation":"✅ 正确答案：正确\n是苏州瑞泽气体净化设备有限公司通过湖北招商引资项目落户咸宁成立的公司。","category":"公司概况"},
-    {"id":4,"type":"single","question":"公司的注册资本是多少？","options":["1000万元","1200万元","1500万元","2000万元"],"answer":1,"explanation":"✅ 正确答案：1200万元\n注册资本为1200万元。","category":"公司概况"},
-    {"id":5,"type":"single","question":"公司的服务理念是什么？","options":["价格第一、利润第一","质量第一、用户第一","速度第一、效率第一","技术第一、创新第一"],"answer":1,"explanation":"✅ 正确答案：质量第一、用户第一\n提供免费安装指导、技术培训、一年免费保修、终身优惠配件，并赠送一年用量的易损备件。","category":"公司概况"},
-    {"id":6,"type":"single","question":"公司的纯化技术能达到什么水平？","options":["普气净化到3N~4N","高纯气体可从5N净化到6N、7N、8N甚至9N级别","只能做工业级净化","只能达到5N级别"],"answer":1,"explanation":"✅ 正确答案：高纯气体可从5N净化到6N、7N、8N甚至9N级别\n从普气净化到5N~6N，高纯气体可从5N净化到6N、7N、8N甚至9N级别。","category":"技术实力"},
-    {"id":7,"type":"multi","question":"设备的核心材料包括哪些？（多选）","options":["进口吸附材料","国际知名品牌阀门","BA/EP级不锈钢抛光管","普通碳钢材料"],"answer":[0,1,2],"explanation":"✅ 正确答案：进口吸附材料、国际知名品牌阀门、BA/EP级不锈钢抛光管\n采用进口吸附材料、国际知名品牌阀门、BA/EP级不锈钢抛光管，确保品质稳定。","category":"技术实力"},
-    {"id":8,"type":"judge","question":"关键设备如RZ-EGP系列设计寿命为5-8年。","answer":false,"explanation":"✅ 正确答案：错误\n关键设备如RZ-EGP系列设计寿命10-15年，吸附材料饱和后可返厂再生。","category":"技术实力"},
-    {"id":9,"type":"single","question":"根据GB/T 4842-2017，高纯氩气的纯度要求是？","options":["≥99.99%","≥99.999%","≥99.9995%","≥99.9999%"],"answer":2,"explanation":"✅ 正确答案：≥99.9995%\nGB/T 4842-2017规定高纯氩气纯度≥99.9995%。","category":"技术实力"},
-    {"id":10,"type":"single","question":"公司已获得多少项实用新型专利？","options":["5项","10项","19项","30项"],"answer":2,"explanation":"✅ 正确答案：19项\n已获19项实用新型专利，10项在申请，未来五年计划新增40+项专利。","category":"技术实力"},
-    {"id":11,"type":"multi","question":"氢气纯化设备能处理哪些原料气？（多选）","options":["水电解氢气","工业氢气","含杂质氢气","天然气"],"answer":[0,1,2],"explanation":"✅ 正确答案：水电解氢气、工业氢气、含杂质氢气\n可处理水电解氢气、工业氢气、含杂质氢气等，不同原料气采用不同工艺。","category":"氢气设备"},
-    {"id":12,"type":"single","question":"QYC系列氢气纯化设备纯度可达多少？","options":["3N-5N","5N-8N","8N-9N","9N以上"],"answer":1,"explanation":"✅ 正确答案：5N-8N\nQYC系列可达5N-8N，QGC系列加装贵金属吸气剂后可达6N-9N。","category":"氢气设备"},
-    {"id":13,"type":"judge","question":"氢气纯化设备采用氢气再生，需要专用机房。","answer":false,"explanation":"✅ 正确答案：错误\n采用原气吹扫再生流程，不用氢气再生，无安全隐患，不需专用机房。","category":"氢气设备"},
-    {"id":14,"type":"single","question":"实验室用氢气净化机的特点是什么？","options":["体积大，固定安装","体积小，移动方便，功耗低","需要专用机房","只能处理大量气体"],"answer":1,"explanation":"✅ 正确答案：体积小，移动方便，功耗低\n体积小（450×600×1200mm）、移动方便、功耗低（1.6-2.4kW）、适用于光谱仪配套。","category":"氢气设备"},
-    {"id":15,"type":"single","question":"氮气纯化有几种主要工艺？","options":["1种","2种","3种","4种"],"answer":2,"explanation":"✅ 正确答案：3种\n三种：加氢催化除氧型、碳酸氧型、化学脱氧型，根据原料气含氧量选择。","category":"氮气设备"},
-    {"id":16,"type":"single","question":"氮气纯化设备的处理气量范围是多少？","options":["0.1-100Nm³/h","1-2000Nm³/h","10-5000Nm³/h","仅限小流量"],"answer":1,"explanation":"✅ 正确答案：1-2000Nm³/h\n1-2000Nm³/h，可根据需求定制非标设备。","category":"氮气设备"},
-    {"id":17,"type":"judge","question":"氮气在食品行业主要用于焊接保护。","answer":false,"explanation":"✅ 正确答案：错误\n食品行业主要用于食品包装、啤酒保鲜、果蔬保鲜等，需要满足食品级标准。","category":"氮气设备"},
-    {"id":18,"type":"single","question":"氩气纯化中，哪种方法纯度可达6N-9N？","options":["直接脱氧法","吸气剂法","化学吸收法","物理吸附法"],"answer":1,"explanation":"✅ 正确答案：吸气剂法\n吸气剂法纯度可达6N-9N，直接脱氧法纯度较低。","category":"氩气设备"},
-    {"id":19,"type":"single","question":"液氩纯化设备的主要优势是什么？","options":["设备复杂但纯度高","充装速度快、工艺简单、能耗低","适合小流量应用","需要高温高压条件"],"answer":1,"explanation":"✅ 正确答案：充装速度快、工艺简单、能耗低\n充装速度快、工艺简单、能耗低，适用于气体充装行业。","category":"氩气设备"},
-    {"id":20,"type":"multi","question":"半导体行业需要哪些气体设备？（多选）","options":["高纯氮气纯化设备","高纯氩气纯化设备","氢气纯化设备","氧气纯化设备"],"answer":[0,1,2,3],"explanation":"✅ 正确答案：高纯氮气、氩气、氢气、氧气纯化设备\n半导体行业需要高纯氮气、氩气、氢气、氧气纯化设备，以及特种气体混合系统。","category":"行业应用"},
-    {"id":21,"type":"single","question":"玻璃行业浮法玻璃生产主要需要什么气体？","options":["氧气","氢气","高纯氮气","二氧化碳"],"answer":2,"explanation":"✅ 正确答案：高纯氮气\n浮法玻璃生产需要高纯氮气保护，石英玻璃加工需要氩气保护。","category":"行业应用"},
-    {"id":22,"type":"judge","question":"食品行业用气体设备不需要特殊认证。","answer":false,"explanation":"✅ 正确答案：错误\n需要食品级认证，确保气体纯净无污染，符合食品安全标准。","category":"行业应用"},
-    {"id":23,"type":"multi","question":"选择纯化设备需要考虑哪些参数？（多选）","options":["气体种类和流量","气源品质和纯度要求","压力条件和工作环境","设备颜色"],"answer":[0,1,2],"explanation":"✅ 正确答案：气体种类和流量、气源品质和纯度要求、压力条件和工作环境\n需要确定：气体种类、流量、气源品质、纯度要求、压力条件、工作环境等6个参数。","category":"技术参数"},
-    {"id":24,"type":"single","question":"纯度表示方法中，5N代表多少纯度？","options":["99.9%","99.99%","99.999%","99.9999%"],"answer":2,"explanation":"✅ 正确答案：99.999%\nN代表9的数量，如5N=99.999%，6N=99.9999%。","category":"技术参数"},
-    {"id":25,"type":"single","question":"1ppm等于多少ppb？","options":["10ppb","100ppb","1000ppb","10000ppb"],"answer":2,"explanation":"✅ 正确答案：1000ppb\n1ppm=1000ppb，我们设备可达到ppb级净化。","category":"技术参数"},
-    {"id":26,"type":"single","question":"公司产品的保修期是多久？","options":["3个月","6个月","1年","2年"],"answer":2,"explanation":"✅ 正确答案：1年\n所有产品免费保修一年。对于高压设备，提供2年质保。","category":"售后服务"},
-    {"id":27,"type":"multi","question":"公司的售后服务包括哪些？（多选）","options":["免费安装指导","技术培训","一年免费保修","终身优惠配件"],"answer":[0,1,2,3],"explanation":"✅ 正确答案：免费安装指导、技术培训、一年免费保修、终身优惠配件\n提供免费安装指导、技术培训、一年免费保修、终身优惠配件，并赠送一年用量的易损备件。","category":"售后服务"},
-    {"id":28,"type":"judge","question":"过保后公司不再提供任何维修服务。","answer":false,"explanation":"✅ 正确答案：错误\n终身提供质优价廉的配件服务，维修费用透明，提供终身技术支持。","category":"售后服务"},
-    {"id":29,"type":"multi","question":"下列哪些企业是公司的客户？（多选）","options":["徐工集团","比亚迪","中国船舶","三一重工"],"answer":[0,1,2,3],"explanation":"✅ 正确答案：徐工集团、比亚迪、中国船舶、三一重工\n徐工集团、比亚迪、中国船舶、三一重工、南高齿等都是公司的知名客户。","category":"客户案例"},
-    {"id":30,"type":"single","question":"公司与西科沃克、顶立科技主要在哪个行业合作？","options":["食品行业","热处理行业","医疗行业","光伏行业"],"answer":1,"explanation":"✅ 正确答案：热处理行业\n西科沃克、顶立科技、湖南烯瑞等都是公司在热处理行业的合作伙伴。","category":"客户案例"},
-    {"id":31,"type":"single","question":"RZ-YA-200G设备每小时可充装多少瓶气体？","options":["10瓶","20瓶","40瓶","60瓶"],"answer":2,"explanation":"✅ 正确答案：40瓶\n200Nm³/h处理量，约每小时充装40瓶标准钢瓶。","category":"高压设备"},
-    {"id":32,"type":"single","question":"高压型设备的工作压力可达多少？","options":["5-10MPa","10-15MPa","15-20MPa","20-25MPa"],"answer":3,"explanation":"✅ 正确答案：20-25MPa\n高压型设备工作压力可达20-25MPa，可直接用于钢瓶充装。","category":"高压设备"},
-    {"id":33,"type":"judge","question":"高压设备需要隔膜压缩机才能充装。","answer":false,"explanation":"✅ 正确答案：错误\n直接对低温泵-汽化器出口气体净化，无需隔膜压缩机，效率高成本低。","category":"高压设备"},
-    {"id":34,"type":"multi","question":"高压设备的纯化工艺包括哪些步骤？（多选）","options":["催化剂脱除氧、一氧化碳等杂质","进口干燥剂吸附水分、二氧化碳","高温裂解","膜分离"],"answer":[0,1],"explanation":"✅ 正确答案：催化剂脱氧、干燥剂吸附\n采用分级纯化工艺：第一步催化剂脱氧，第二步干燥剂吸附水分和二氧化碳。","category":"高压设备"},
-    {"id":35,"type":"single","question":"干燥器的工作时间可达多少瓶？","options":["1000-2000瓶","2000-5000瓶","5000-8000瓶","10000-12000瓶以上"],"answer":3,"explanation":"✅ 正确答案：10000-12000瓶以上\n200系列干燥器工作时间可达10000-12000瓶以上，50系列可达2000瓶以上。","category":"高压设备"},
-    {"id":36,"type":"multi","question":"高压设备有哪些独特优势？（多选）","options":["直接净化，无需额外加压设备","组合式纯化工艺，分级处理","特殊加热构造，加热均匀稳定","采用世界先进净化材料"],"answer":[0,1,2,3],"explanation":"✅ 正确答案：所有选项都是高压设备的独特优势\n还包括高纯接头设计保证无渗透。","category":"技术优势"},
-    {"id":37,"type":"single","question":"设备的整机设计寿命是多少年？","options":["5-8年","8-12年","12-15年","≥20年"],"answer":3,"explanation":"✅ 正确答案：≥20年\n整机寿命≥20年（防雨环境下），非标设备≥20年，催化剂/吸附剂≥10年。","category":"技术优势"},
-    {"id":38,"type":"single","question":"标准产品的交货期一般是多久？","options":["1-2周","2-4周","4-8周","8-12周"],"answer":1,"explanation":"✅ 正确答案：2-4周\n标准产品2-4周，定制产品4-8周，具体根据订单情况确定。","category":"安装交付"},
-    {"id":39,"type":"judge","question":"设备需要客户自行组装和编程。","answer":false,"explanation":"✅ 正确答案：错误\n设备整体撬装，现场只需连接管道和电源。我们负责设备组装、自控编程和设备调试。","category":"安装交付"},
-    {"id":40,"type":"single","question":"设备验收的测试运行时间是多久？","options":["2小时","8小时","24小时","48小时"],"answer":2,"explanation":"✅ 正确答案：24小时\n设备调试结束后24小时运行，使用微氧仪和露点仪检测出口气体指标。","category":"验收标准"},
-    {"id":41,"type":"judge","question":"设备到达现场后立即视为验收合格。","answer":false,"explanation":"✅ 正确答案：错误\n设备到达现场6个月，或调试结束3个月，如因非乙方原因未验收，默认设备通过甲方验收。","category":"验收标准"},
-    {"id":42,"type":"single","question":"面对客户说'你们设备比XX贵'，最佳应对策略是什么？","options":["立即降价","强调初投资略高但长期成本更低","批评竞争对手","回避价格问题"],"answer":1,"explanation":"✅ 正确答案：强调初投资略高但长期成本更低\n应算长期账：设备寿命更长、能耗更低、质保更长、纯度更稳定，综合使用成本更低。","category":"销售技巧"},
-    {"id":43,"type":"single","question":"促成成交的有效方法是？","options":["等待客户主动联系","只谈技术不谈价格","提供详细经济性分析和解决方案","承诺不可能实现的条件"],"answer":2,"explanation":"✅ 正确答案：提供详细经济性分析和解决方案\n应提供详细经济性分析，计算投资回收期，并提供定制化解决方案和灵活付款方式。","category":"销售技巧"},
-    {"id":44,"type":"multi","question":"纯度表示方法中正确的有？（多选）","options":["3N = 99.9%","5N = 99.999%","6N = 99.9999%","8N = 99.999999%"],"answer":[0,1,2,3],"explanation":"✅ 正确答案：全部正确\nN代表9的数量，3N=99.9%，5N=99.999%，6N=99.9999%，8N=99.999999%。","category":"行业知识"},
-    {"id":45,"type":"single","question":"对于气站客户，应该重点介绍哪些产品？","options":["实验室小型纯化机","高压超纯氩气/氮气纯化设备","医用氧气设备","食品级CO₂设备"],"answer":1,"explanation":"✅ 正确答案：高压超纯氩气/氮气纯化设备\n气站客户应重点了解高压超纯氩气/氮气纯化设备，如RZ-YA-200G、RZ-DYC-200G等。","category":"行业知识"},
-    {"id":46,"type":"single","question":"公司2023年在咸宁征地多少亩建设新厂？","options":["10亩","20亩","30亩","50亩"],"answer":2,"explanation":"✅ 正确答案：30亩\n2023年在咸宁征地30亩建设新厂，并成立了专注于氢能领域的鑫思瑞能源科技湖北有限公司。","category":"公司概况"},
-    {"id":47,"type":"judge","question":"公司可以为客户提供非标定制纯化解决方案。","answer":true,"explanation":"✅ 正确答案：正确\n公司有强大的技术团队，可为客户提供非标定制纯化解决方案。","category":"技术实力"},
-    {"id":48,"type":"single","question":"氧气纯化设备主要去除哪些杂质？","options":["H₂、CO、烃类、H₂O、CO₂","氮气和氩气","氦气和氖气","所有杂质"],"answer":0,"explanation":"✅ 正确答案：H₂、CO、烃类、H₂O、CO₂\n主要去除H₂、CO、烃类、H₂O、CO₂，但不能脱除氮、氩等惰性气体。","category":"技术参数"},
-    {"id":49,"type":"single","question":"混合配气系统的混合精度可达多少？","options":["±1%","±0.5%","±0.1%","±0.05%"],"answer":1,"explanation":"✅ 正确答案：±0.5%\n浓度调节范围0-75%，精度可达±0.5%。","category":"技术参数"},
-    {"id":50,"type":"single","question":"尾气回收系统的回收率一般可达多少？","options":["50%-70%","70%-85%","85%-95%","90%-99%"],"answer":3,"explanation":"✅ 正确答案：90%-99%\n回收率90%-99%，根据气体种类和工艺不同有所差异。","category":"技术参数"},
-    {"id":1001,"type":"single","question":"客户说'预算有限'，最好的回应是？","options":["立即降价争取订单","强调我们设备质量更好","提供分期付款方案或性价比更高的型号","放弃这个客户"],"answer":2,"explanation":"✅ 正确答案：提供分期付款方案或性价比更高的型号\n预算有限的客户更需要看到投资回报和灵活的付款方式。","category":"销售技巧"},
-    {"id":1002,"type":"multi","question":"初次拜访潜在客户前，需要做哪些准备？（多选）","options":["了解客户行业背景和用气需求","准备公司产品资料和成功案例","了解客户可能面临的技术痛点","带上详细报价单和合同"],"answer":[0,1,2],"explanation":"✅ 正确答案：了解客户行业背景、准备资料、了解技术痛点\n初次拜访主要是了解需求和建立信任，不宜过早谈价格。","category":"销售技巧"},
-    {"id":1003,"type":"judge","question":"面对技术型客户，应该尽量少问问题，多展示技术参数。","answer":false,"explanation":"✅ 正确答案：错误\n技术型客户更希望被理解，要多问开放式问题了解他们的具体需求和痛点。","category":"销售技巧"},
-    {"id":1004,"type":"single","question":"客户说'我再考虑考虑'，最佳应对是？","options":["好的，等您消息","您还有什么顾虑吗？我可以帮您解答","现在决定可以给您优惠","那我下周再联系您"],"answer":1,"explanation":"✅ 正确答案：您还有什么顾虑吗？我可以帮您解答\n需要主动了解客户的顾虑，而不是被动等待。","category":"销售技巧"},
-    {"id":1005,"type":"multi","question":"成功案例分享时，需要突出哪些关键信息？（多选）","options":["客户遇到的问题和痛点","我们提供的解决方案","给客户带来的具体价值（节省成本、提高效率等）","设备的技术参数细节"],"answer":[0,1,2],"explanation":"✅ 正确答案：客户痛点、解决方案、带来的价值\n要让潜在客户看到我们能为他们解决类似问题。","category":"销售技巧"},
-    {"id":1006,"type":"single","question":"哪个是最有效的开场白？","options":["你好，我是XX公司的销售","王总您好，我们为XX公司解决了气体纯度不稳定的问题，每月帮他们节省XX元","我们公司设备质量很好，要不要了解一下","最近有气体纯化的需求吗"],"answer":1,"explanation":"✅ 正确答案：第二项\n以客户价值为导向的开场白最能引起兴趣，而不是简单的自我介绍。","category":"销售技巧"},
-    {"id":1007,"type":"judge","question":"销售过程中应该避免谈论竞争对手。","answer":false,"explanation":"✅ 正确答案：错误\n可以客观地比较，突出我们的优势，但不要贬低竞争对手。","category":"销售技巧"},
-    {"id":1008,"type":"single","question":"客户对交货期有疑虑，应该？","options":["承诺最短时间但可能做不到","明确正常交货期，但了解紧急程度提供加急方案","忽视这个疑虑","让客户接受标准交货期"],"answer":1,"explanation":"✅ 正确答案：明确正常交货期，但了解紧急程度提供加急方案\n要诚实但灵活，了解客户真实需求。","category":"销售技巧"},
-    {"id":1009,"type":"multi","question":"有效的提问技巧包括？（多选）","options":["开放式问题了解需求","封闭式问题确认细节","引导性问题发现痛点","一连串问题轰炸客户"],"answer":[0,1,2],"explanation":"✅ 正确答案：开放式问题、封闭式问题、引导性问题\n要根据对话节奏灵活运用不同的提问方式。","category":"销售技巧"},
-    {"id":1010,"type":"single","question":"客户说'你们价格太高'，应该先？","options":["立即解释成本构成","询问客户是与哪家比较","强调我们质量更好","直接问客户预算"],"answer":1,"explanation":"✅ 正确答案：询问客户是与哪家比较\n先了解客户比较的对象和标准，才能有效回应。","category":"销售技巧"},
-    {"id":1011,"type":"single","question":"跟进客户的最佳时机是？","options":["每天联系一次","按照约定的时间联系","根据客户需求紧急程度确定","每周联系一次"],"answer":2,"explanation":"✅ 正确答案：根据客户需求紧急程度确定\n跟进要因人而异，既要保持联系又不让客户反感。","category":"销售技巧"},
-    {"id":1012,"type":"judge","question":"面对客户的投诉，应该立即辩解澄清。","answer":false,"explanation":"✅ 正确答案：错误\n首先要倾听和理解，表示歉意，然后解决问题。","category":"销售技巧"},
-    {"id":1013,"type":"multi","question":"建立客户信任的关键是？（多选）","options":["专业的产品知识","诚实守信的承诺","及时有效的沟通","长期的合作支持"],"answer":[0,1,2,3],"explanation":"✅ 正确答案：全部都是\n客户信任是综合因素的结果，需要全方位的努力。","category":"销售技巧"},
-    {"id":1014,"type":"single","question":"客户谈判陷入僵局时，应该？","options":["坚持自己的立场","寻找双方都能接受的折中方案","终止谈判","做出所有让步"],"answer":1,"explanation":"✅ 正确答案：寻找双方都能接受的折中方案\n谈判是寻求共赢，而不是你输我赢。","category":"销售技巧"},
-    {"id":1015,"type":"single","question":"销售拜访的目标应该是？","options":["立即成交","了解客户需求建立关系","展示所有产品","拿到客户预算"],"answer":1,"explanation":"✅ 正确答案：了解客户需求建立关系\n初次拜访的主要目标是建立联系和了解需求。","category":"销售技巧"}
+            {id:1,type:'single',question:"瑞泽气体净化湖北有限公司成立于哪一年？",options:["2015年","2016年","2017年","2018年"],answer:2,explanation:"✅ 正确答案：2017年\n公司成立于2017年，母公司苏州瑞泽有更久行业积淀。",category:"公司概况"},
+            {id:2,type:'multi',question:"公司的主要资质包括哪些？（多选）",options:["高新技术企业","科技型中小企业","企业联合创新企业","ISO 9001认证企业"],answer:[0,1,2],explanation:"✅ 正确答案：高新技术企业、科技型中小企业、企业联合创新企业\n公司是国家认定的高新技术企业、科技型中小企业、企业联合创新企业。",category:"公司概况"},
+            {id:3,type:'judge',question:"公司是苏州瑞泽在湖北设立的全资子公司。",answer:true,explanation:"✅ 正确答案：正确\n是苏州瑞泽气体净化设备有限公司通过湖北招商引资项目落户咸宁成立的公司。",category:"公司概况"},
+            {id:4,type:'single',question:"公司的注册资本是多少？",options:["1000万元","1200万元","1500万元","2000万元"],answer:1,explanation:"✅ 正确答案：1200万元\n注册资本为1200万元。",category:"公司概况"},
+            {id:5,type:'single',question:"公司的服务理念是什么？",options:["价格第一、利润第一","质量第一、用户第一","速度第一、效率第一","技术第一、创新第一"],answer:1,explanation:"✅ 正确答案：质量第一、用户第一\n提供免费安装指导、技术培训、一年免费保修、终身优惠配件，并赠送一年用量的易损备件。",category:"公司概况"},
+            {id:6,type:'single',question:"客户说'预算有限'，最好的回应是？",options:["立即降价争取订单","强调我们设备质量更好","提供分期付款方案或性价比更高的型号","放弃这个客户"],answer:2,explanation:"✅ 正确答案：提供分期付款方案或性价比更高的型号\n预算有限的客户更需要看到投资回报和灵活的付款方式。",category:"销售技巧"},
+            {id:7,type:'multi',question:"初次拜访潜在客户前，需要做哪些准备？（多选）",options:["了解客户行业背景和用气需求","准备公司产品资料和成功案例","了解客户可能面临的技术痛点","带上详细报价单和合同"],answer:[0,1,2],explanation:"✅ 正确答案：了解客户行业背景、准备资料、了解技术痛点\n初次拜访主要是了解需求和建立信任，不宜过早谈价格。",category:"销售技巧"},
+            {id:8,type:'judge',question:"面对技术型客户，应该尽量少问问题，多展示技术参数。",answer:false,explanation:"✅ 正确答案：错误\n技术型客户更希望被理解，要多问开放式问题了解他们的具体需求和痛点。",category:"销售技巧"}
         ];
         // ========== 核心函数 ==========
         function initQuestionBank() {
@@ -697,7 +646,7 @@
             } else {
                 questionBank = [...defaultQuestions];
             }
-            adminPassword = pwd || 'xmc';
+            adminPassword = pwd || '999';
             saveQuestionBank();
             updateTotalCount();
             updateHomeStats();
@@ -1255,6 +1204,79 @@
             document.getElementById('export-code').scrollIntoView({ behavior: 'smooth' });
         }
         
+        // 下载JSON文件到本地（完整修复版）
+        function downloadJSON() {
+            try {
+                if (questionBank.length === 0) {
+                    showToast('⚠️ 题库为空，无法下载');
+                    return;
+                }
+                
+                var exp = {
+                    version: '1.0',
+                    date: new Date().toISOString(),
+                    count: questionBank.length,
+                    questions: questionBank
+                };
+                
+                var json = JSON.stringify(exp, null, 2);
+                var blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                
+                var now = new Date();
+                var dateStr = now.getFullYear() + '-' + 
+                              String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(now.getDate()).padStart(2, '0');
+                a.download = '题库备份_' + dateStr + '_' + questionBank.length + '题.json';
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(function() {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                
+                showToast('✅ 文件下载成功！共 ' + questionBank.length + ' 道题');
+                
+            } catch(e) {
+                alert('下载失败：' + e.message);
+                showToast('❌ 下载失败，请重试');
+            }
+        }
+        // 从文件读取JSON并填入文本框
+function loadFileToImport() {
+    var fileInput = document.getElementById('file-input');
+    var fileName = document.getElementById('file-name');
+    var file = fileInput.files[0];
+    
+    if (!file) {
+        fileName.textContent = '未选择文件';
+        return;
+    }
+    
+    fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+    
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var content = e.target.result;
+            // 验证是否为有效JSON
+            var test = JSON.parse(content);
+            document.getElementById('import-data').value = content;
+            showToast('✅ 文件读取成功，请点击"导入"完成导入');
+        } catch(err) {
+            alert('❌ 文件格式错误：' + err.message + '\n请确保选择的是有效的JSON文件');
+            fileName.textContent = '❌ 格式错误';
+        }
+    };
+    reader.onerror = function() {
+        alert('❌ 读取文件失败，请重试');
+    };
+    reader.readAsText(file, 'UTF-8');
+}
         function importQuestionBank() {
             try {
                 let data = JSON.parse(document.getElementById('import-data').value);
@@ -1275,7 +1297,7 @@
                     loadQuestionList();
                     updateSystemStats();
                     updateHomeStats();
-                    showToast(`✅ 导入 ${added} 题成功！`);
+                    showToast('✅ 导入 ' + added + ' 题成功！');
                 } else {
                     showToast('⚠️ 无新题可导入');
                 }
